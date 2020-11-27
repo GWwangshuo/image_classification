@@ -1,0 +1,101 @@
+general:
+  seed: 57
+  epoch: 100
+  gpus: [3]
+  precision: 16
+  amp_backend: "native" # [native or apex]
+  amp_level: O2
+  accelerator: null # [dp, ddp, ddp_cpu or ddp2]
+  acc_grad: 2
+  deterministic: True
+  debug: False
+  limit_val_batches: 0.25
+  resume_from_checkpoint: null
+
+callback:
+  checkpoint:
+    monitor: val_loss_mean
+    save_last: True
+    save_top_k: 1
+    mode: min
+    save_weights_only: True
+    filename: "{epoch}-{val_loss_mean:.3f}-{val_acc:.3f}.pth"
+
+data:
+  dataset:
+#    root: ../data/tiny-imagenet-200//train
+    root: ../data/CIFAR10/train
+    k_fold: 5
+    val_k: 0
+  dataloader:
+    batch_size: 256
+    num_workers: 8
+    shuffle: True
+    pin_memory: True
+
+model:
+#  base: timm
+#  #model_name: tf_efficientnet_b4
+#  model_name: resnet18
+#  pretrained: False # True or False
+#  num_classes: 200
+#  in_chans: 3
+#  drop_rate: 0.3
+#  base: pretrainedmodels
+#  model_name: resnet18
+#  pretrained:
+#  num_classes: 200
+#  in_chans: 3
+#  drop_rate: 0.3
+  base: local
+  model_name: resnet18
+  pretrained: False
+  num_classes: 10
+  in_chans: 3
+  drop_rate: 0.3
+
+
+loss:
+  base: torch
+  name: cross_entropy
+
+optimizer:
+  optimizer:
+    optim_name: RAdam
+    params:
+      lr: !!float 1e-5
+  scheduler:
+    name: CosineAnnealingWarmUpRestarts
+    params:
+      T_0: 150
+      T_mult: 1
+      eta_max: !!float 1e-2
+      T_up: 10
+      gamma: 0.8
+
+transform:
+  train:
+    Compose:
+      - RandomResizedCrop:
+          height: 32
+          width: 32
+          scale: [0.98, 1.0]
+          ratio: [0.98, 1.0]
+      - Flip
+      - CoarseDropout:
+          max_holes: 8
+          min_holes: 2
+          max_height: 8
+          max_width: 8
+          p: 0.8
+      - Normalize:
+          mean: [0.485, 0.456, 0.406]
+          std: [0.229, 0.224, 0.225]
+      - ToTensorV2
+
+  val:
+    Compose:
+      - Normalize:
+          mean: [0.485, 0.456, 0.406]
+          std: [0.229, 0.224, 0.225]
+      - ToTensorV2

@@ -1,0 +1,145 @@
+general:
+  seed: 57
+  epoch: 200
+  gpus: [2]
+  precision: 16
+  amp_backend: "native" # [native or apex]
+  amp_level: O2
+  accelerator: null # [null, dp, ddp, ddp_cpu or ddp2]
+  acc_grad: 2
+  deterministic: True
+  debug: False
+  limit_val_batches: 0.25
+  resume_from_checkpoint: null
+
+callback:
+  checkpoint:
+    monitor: val_loss_mean
+    save_last: True
+    save_top_k: 1
+    mode: min
+    save_weights_only: True
+    filename: "{epoch}-{val_loss_mean:.3f}-{val_acc:.3f}.pth"
+
+data:
+  dataset:
+    name: CIFAR100
+    root: ../data/CIFAR100/
+  dataloader:
+    batch_size: 256
+    num_workers: 8
+    shuffle: True
+    pin_memory: True
+
+model:
+#  base: timm
+#  #model_name: tf_efficientnet_b4
+#  model_name: resnet18
+#  pretrained: False # True or False
+#  num_classes: 200
+#  in_chans: 3
+#  drop_rate: 0.3
+#  base: pretrainedmodels
+#  model_name: resnet18
+#  pretrained:
+#  num_classes: 200
+#  in_chans: 3
+#  drop_rate: 0.3
+  base: local
+  model_name: resnet18
+  pretrained: False
+  num_classes: 100
+  in_chans: 3
+  drop_rate: 0.3
+
+loss:
+  base: torch
+  name: cross_entropy
+
+#optimizer:
+#  optimizer:
+#    optim_name: SGD
+#    params:
+#      lr: !!float 1e-1
+#      momentum: 0.9
+#      weight_decay: !!float 5e-4
+#  scheduler:
+#    name: CosineAnnealingWarmUpRestarts
+#    params:
+#      T_0: 150
+#      T_mult: 1
+#      eta_max: !!float 1e-2
+#      T_up: 10
+#      gamma: 0.8
+#optimizer:
+#  optimizer:
+#    optim_name: SGD
+#    params:
+#      lr: !!float 1e-1
+#      momentum: 0.9
+#      weight_decay: !!float 5e-4
+#  scheduler:
+#     name: CosineAnnealingLR
+#     params:
+#       T_max: 200
+optimizer:
+  optimizer:
+    optim_name: SGD
+    params:
+      lr: !!float 1e-1
+      momentum: 0.9
+      weight_decay: !!float 5e-4
+  scheduler:
+     name: MultiStepLR
+     params:
+       milestones: [60, 120, 160]
+       gamma: 0.2
+
+
+
+#transform:
+#  base: albumentations
+#  train:
+#    Compose:
+#      - Sequential:
+#        - PadIfNeeded:
+#            min_height: 36
+#            min_width: 36
+#        - RandomCrop:
+#            height: 32
+#            width: 32
+#        p: 0.6
+#      - HorizontalFlip:
+#          p: 0.5
+#      - Normalize:
+#          mean: [0.4914, 0.4822, 0.4465]
+#          std: [0.2023, 0.1994, 0.2010]
+#      - ToTensorV2
+#
+#  val:
+#    Compose:
+#      - Normalize:
+#          mean: [0.4914, 0.4822, 0.4465]
+#          std: [0.2023, 0.1994, 0.2010]
+#      - ToTensorV2
+
+transform:
+  base: torch
+  train:
+    T_Compose:
+      - T_RandomCrop:
+          size: 32
+          padding: 4
+      - T_RandomHorizontalFlip:
+          p: 0.5
+      - T_ToTensor
+      - T_Normalize:
+          mean: [0.4914, 0.4822, 0.4465]
+          std: [0.2023, 0.1994, 0.2010]
+
+  val:
+    T_Compose:
+      - T_ToTensor
+      - T_Normalize:
+          mean: [0.4914, 0.4822, 0.4465]
+          std: [0.2023, 0.1994, 0.2010]
